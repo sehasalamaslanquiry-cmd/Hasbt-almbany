@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.5">
+    <title>حاسبة تكاليف البناء - حسابات تلقائية شاملة</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+        :root {--primary: #0f172a; --secondary: #3b82f6; --accent: #10b981; --bg: #f1f5f9; --card: #ffffff; --border: #cbd5e1; --text: #1e293b; --danger: #ef4444; --volume: #1d4ed8;}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Tajawal', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 15px; }
+        .container { max-width: 100%; padding: 0 20px; }
+        .header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; position: sticky; top: 0; z-index: 100; }
+        .header h1 { font-size: 1.2rem; margin-bottom: 8px; }
+        .total-bar { background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; margin-bottom: 10px; font-size: 1.4rem; font-weight: 700; border: 1px solid rgba(255,255,0.1); }
+        .btn-group { display: flex; gap: 5px; justify-content: center; flex-wrap: nowrap; margin-top: 10px; }
+        .btn-group button { flex: 1; padding: 8px 2px; font-size: 0.8rem; white-space: nowrap; min-width: 60px; }
+        .section { background: var(--card); border: 2px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .section-title { background: var(--primary); color: white; padding: 12px 18px; border-radius: 8px; font-size: 1.2rem; font-weight: 700; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .section-total { background: var(--accent); padding: 6px 15px; border-radius: 20px; font-size: 1rem; }
+        .section-volume { background: var(--volume); padding: 6px 15px; border-radius: 20px; font-size: 1rem; margin-left: 8px; }
+        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        .input-group label { font-weight: 600; font-size: 0.9rem; color: var(--primary); }
+        .input-group input, .input-group select { padding: 10px; border: 2px solid var(--border); border-radius: 6px; font-family: 'Tajawal', sans-serif; font-size: 1rem; transition: all 0.3s; }
+        .input-group input:disabled { background: #e2e8f0; cursor: not-allowed; font-weight: 700; color: #475569; }
+        .input-group input:focus, .input-group select:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 3px rgba(59,130,246,0.1); }
+        .calc-display { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin: 10px 0; font-family: 'Courier New', monospace; font-size: 0.9rem; direction: ltr; text-align: left; }
+        .result-box { background: #dbeafe; border-right: 4px solid var(--secondary); padding: 12px; border-radius: 6px; margin: 10px 0; font-weight: 600; }
+        #steelWarning { color: var(--danger); font-weight: bold; margin-top: 10px; display: none; background: #fee2e2; padding: 10px; border-radius: 6px; }
+        button { background: var(--secondary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-family: 'Tajawal', sans-serif; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        button:hover { background: var(--primary); transform: translateY(-2px); }
+        button:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+        .btn-reset { background: var(--danger); }
+        .btn-print { background: #8b5cf6; }
+        .btn-save { background: var(--accent); }
+        .summary-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .summary-table th, .summary-table td { border: 1px solid var(--border); padding: 12px; text-align: center; }
+        .summary-table th { background: var(--primary); color: white; }
+        .summary-table tr:nth-child(even) { background: #f8fafc; }
+        .labor-section { background: #fef3c7; border: 2px dashed #f59e0b; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .labor-section h4 { color: #92400e; margin-bottom: 10px; }
+        .materials-section { background: #e0f2fe; border: 2px dashed #0ea5e9; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .materials-section h4 { color: #075985; margin-bottom: 10px; }
+        .materials-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.85rem; }
+        .materials-table th, .materials-table td { border: 1px solid var(--border); padding: 6px; text-align: center; }
+        .materials-table th { background: #dbeafe; color: var(--primary); }
+        .materials-table tr:nth-child(even) { background: #f8fafc; }
+        .checkbox-row { background: #eef2f7; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-right: 5px solid #2196F3; }
+        @media (max-width: 768px) { .input-grid { grid-template-columns: 1fr; } .header h1 { font-size: 1.3rem; } }
+        @media print {
+            .btn-group, .header button, .btn-save, .btn-reset { display: none !important; }
+            .section, .labor-section, .materials-section { border: 1px solid #000 !important; page-break-inside: avoid; margin-bottom: 10px; }
+            .header { position: static !important; background: #f0f0f0 !important; color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>حاسبة تكاليف البناء - حسابات تلقائية شاملة</h1>
+            <div class="total-bar" style="font-size: 1.3rem; padding: 10px; margin: 10px auto; max-width: 400px;">
+<div class="total-bar">
+    الإجمالي: <span id="grandTotal">0</span> ريال يمني
+</div>
+</div>
+            </div>
+            <div class="btn-group" style="justify-content: center;">
+                <button onclick="saveData(); sendToGoogleSheets(event)">حفظ</button>
+                <button onclick="loadData()" class="btn-save">استعادة</button>
+                <button onclick="resetAll()" class="btn-reset">تصفير</button>
+                <button class="btn-print" onclick="window.print()">طباعة</button>
+            </div>
+        </div>
+
+        <!-- الإعدادات العامة -->
+        <div class="section">
+            <div class="section-title">الإعدادات العامة للمبنى</div>
+            <div class="input-grid">
+                <div class="input-group"><label>طول المبنى (م)</label><input type="number" id="buildLength" value="9" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>عرض المبنى (م)</label><input type="number" id="buildWidth" value="5" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>ارتفاع الدور (م)</label><input type="number" id="floorHeight" value="3" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>ارتفاع الحفر (م)</label><input type="number" id="excDepth" value="3" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>عدد القواعد</label><input type="number" id="footingsCount" value="6" onchange="calc()"></div>
+                <div class="input-group">
+                    <label>نوع التربة (معامل السعر)</label>
+                    <select id="soilType" onchange="calc()">
+                        <option value="1">تربة عادية (ترابية/رملية)</option>
+                        <option value="1.5">تربة متوسطة (طينية/متماسكة)</option>
+                        <option value="3">تربة صخرية (قاسية)</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>عدد الغرف</label><input type="number" id="roomsCount" value="2" onchange="calc()"></div>
+                <div class="input-group"><label>عدد الأدوار</label><input type="number" id="floorsCount" value="1" onchange="calc()"></div>
+                <div class="input-group"><label>عدد الشبابيك</label><input type="number" id="windowsCount" value="4" onchange="calc()"></div>
+                <div class="input-group"><label>عدد الأبواب</label><input type="number" id="doorsCount" value="2" onchange="calc()"></div>
+            </div>
+            <div class="materials-section">
+                <h4>أسعار المواد الأساسية</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>سعر طن الحديد (ريال)</label><input type="number" id="steelPrice" value="1100000" onchange="calc()"></div>
+                    <div class="input-group"><label>نسبة هالك الحديد %</label><input type="number" id="steelWaste" value="5" min="0" max="20" step="0.5" onchange="calc()"></div>
+                    <div class="input-group"><label>سعر كيس الاسمنت (ريال)</label><input type="number" id="cementPrice" value="8500" onchange="calc()"></div>
+                    <div class="input-group"><label>سعر م³ النيس (ريال)</label><input type="number" id="sandPrice" value="18000" onchange="calc()"></div>
+                    <div class="input-group"><label>سعر م³ الكري (ريال)</label><input type="number" id="gravelPrice" value="22000" onchange="calc()"></div>
+                    <div class="input-group"><label>سعر م³ خرسانة جاهزة (ريال)</label><input type="number" id="concPrice" value="110000" onchange="calc()"></div>
+                    <div class="input-group"><label>سعر وايت الماء (ريال)</label><input type="number" id="waterPrice" value="10000" onchange="calc()"></div>
+                    <div class="input-group"><label>سعر البلكة (ريال)</label><input type="number" id="blockPrice" value="550" onchange="calc()"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. الحفر الإنشائي -->
+        <div class="section">
+            <div class="section-title">
+                <span>1. الحفر الإنشائي للقواعد مع الكرسي</span>
+                <div>
+                    <span class="section-volume"><span id="vol1">0</span> م³</span>
+                    <span class="section-total"><span id="total1">0</span> ريال</span>
+                </div>
+            </div> 
+            <div class="input-grid">
+                <div class="input-group"><label>عرض الحفر (م)</label><input type="number" id="excWidth" value="0.6" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>طول الحفر الإضافي (م)</label><input type="number" id="excExtra" value="0.3" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>عمق حفر الكرسي/الميدات (م)</label><input type="number" id="trenchDepth" value="3" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>طول القاعدة (م)</label><input type="number" id="footingL" value="2" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>عرض القاعدة (م)</label><input type="number" id="footingW" value="1.6" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>ارتفاع القاعدة (م)</label><input type="number" id="footingH" value="0.6" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>نسبة الخصم %</label><input type="number" id="excDiscount" value="30" onchange="calc()"></div>
+                <div class="input-group"><label>سعر م³ حفر (ريال)</label><input type="number" id="excPrice" value="2500" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور العمالة</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم الحفار (ريال)</label><input type="number" id="excForemanLabor" value="12000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال الحفر (ريال)</label><input type="number" id="excWorkersLabor" value="7000" onchange="calc()"></div>
+                    <div class="input-group"><label>عدد أيام الحفر</label><input type="number" id="excDays" value="2" onchange="calc()"></div>
+                </div>
+            </div>   
+            <div class="calc-display" id="calc1"></div>
+            <table class="materials-table" id="mat1"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+            <div class="result-box">الحجم النهائي: <span id="excVolume">0</span> م³</div>
+        </div>
+
+        <!-- 2. القواعد والرقاب -->
+        <div class="section">
+            <div class="section-title">
+                <span>2. أعمال القواعد + الرقاب</span>
+                <div>
+                    <span class="section-volume"><span id="vol2">0</span> م³</span>
+                    <span class="section-total"><span id="total2">0</span> ريال</span>
+                </div></div>
+            <div class="checkbox-row">
+                <label style="cursor: pointer; display: flex; align-items: center;">
+                    <input type="checkbox" id="readyMixToggle" onchange="calc()">
+                    <b style="color: #2c3e50; margin-right: 8px;">هل ستستخدم خرسانة جاهزة؟</b>
+                </label>
+                <small style="display: block; margin-top: 5px; color: #666;">(تفعيل هذا الخيار سيقوم بتصفير تكاليف الأسمنت والنيس والكري تلقائياً)</small>
+            </div>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label>قطر حديد القواعد (ملم)</label>
+                    <select id="barDiameter" onchange="calc()">
+                        <option value="0.617">10 ملم</option>
+                        <option value="0.888">12 ملم</option>
+                        <option value="1.21">14 ملم</option>
+                        <option value="1.58" selected>16 ملم</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>قطر حديد الكانات (ملم)</label>
+                    <select id="stirrupDiameter" onchange="calc()">
+                        <option value="0.395" selected>8 ملم</option>
+                        <option value="0.617">10 ملم</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>عدد الأسياخ في المتر (توزيع)</label><input type="number" id="barsPerMeter" value="6" onchange="calc()"></div>
+                <div class="input-group"><label>سمك القاعدة خرسانة (م)</label><input type="number" id="concThick" value="0.6" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>كيس اسمنت لكل م³</label><input type="number" id="cementPerM3" value="7" onchange="calc()"></div>
+                <div class="input-group"><label>ارتفاع الرقبة (م)</label><input type="number" id="neckHeight" value="1" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>مقطع الرقبة (م)</label><input type="number" id="neckSize" value="0.2" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>عدد أسياخ الرقبة</label><input type="number" id="neckBars" value="4" onchange="calc()"></div>
+                <div class="input-group"><label>تباعد كانات الرقبة (م)</label><input type="number" id="neckStirrupSpace" value="0.2" step="0.05" onchange="calc()"></div>
+            </div>
+            <div class="result-box">
+                إجمالي الحديد: <span id="steelWeightResult">0</span> كجم | 
+                عدد الأسياخ (12م): <span id="steelBarsCount">0</span> سيخ
+            </div>
+            <div id="steelWarning">⚠️ تنبيه هندسي: نسبة التسليح ضعيفة جداً بالنسبة لحجم الخرسانة!</div>
+            <div id="concComparison" style="display:none; background: #fff7ed; border-right: 4px solid #f59e0b; padding: 12px; border-radius: 6px; margin: 10px 0; font-weight: 600;"></div>
+<div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم حدادة (ريال)</label><input type="number" id="steelForemanLabor" value="22000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال حدادة (ريال)</label><input type="number" id="steelWorkersLabor" value="9000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة معلم نجارة (ريال)</label><input type="number" id="carpForemanLabor" value="22000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال نجارة (ريال)</label><input type="number" id="carpWorkersLabor" value="9000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة معلم الصب (ريال)</label><input type="number" id="concForemanLabor" value="30000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال الصب (ريال)</label><input type="number" id="concWorkersLabor" value="15000" onchange="calc()"></div>
+                </div>
+            <div class="calc-display" id="calc2"></div>
+            <table class="materials-table" id="mat2"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- 3. الكرسي الحجر -->
+        <div class="section">
+            <div class="section-title">
+                <span>3. بناء الكرسي الحجر</span>
+                <div>
+                    <span class="section-volume"><span id="vol3">0</span> م³</span>
+                    <span class="section-total"><span id="total3">0</span> ريال</span>
+                </div>
+            <div class="input-grid">
+                <div class="input-group"><label>طول الكرسي (م) - تلقائي</label><input type="number" id="wallLength" value="30" disabled></div>
+                <div class="input-group"><label>ارتفاع الكرسي الحجر (م)</label><input type="number" id="wallHeight" value="0.8" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>سمك الكرسي (م)</label><input type="number" id="wallThick" value="0.4" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>سعر متر الحجر المكعب (ريال)</label><input type="number" id="stonePrice" value="55000" onchange="calc()"></div>
+                <div class="input-group"><label>نسبة المونة من حجم الحجر %</label><input type="number" id="mortarRatio" value="30" onchange="calc()"></div>
+                <div class="input-group"><label>أكياس اسمنت لكل م³ مونة</label><input type="number" id="cementPerMortar" value="7" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم بناء (ريال/م³)</label><input type="number" id="wallForemanLabor" value="25000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال (ريال/م³)</label><input type="number" id="wallWorkersLabor" value="10000" onchange="calc()"></div>
+                </div>
+            </div>
+            <div class="calc-display" id="calc3"></div>
+            <table class="materials-table" id="mat3"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- 4. الميده والعمدان والجسور -->
+        <div class="section">
+            <div class="section-title">
+                <span>4. أعمال الميدة + الأعمدة + الجسور</span>
+                <div>
+                    <span class="section-volume"><span id="vol4">0</span> م³</span>
+                    <span class="section-total"><span id="total4">0</span> ريال</span>
+                </div></div>
+            <div class="input-grid">
+                <div class="input-group"><label>طول الميدة (م) - تلقائي</label><input type="number" id="beamLength" value="30" disabled></div>
+                <div class="input-group"><label>عرض الميدة (م)</label><input type="number" id="beamWidth" value="0.2" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>ارتفاع الميدة (م)</label><input type="number" id="beamHeightInput" value="0.2" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>عدد أسياخ الميدة</label><input type="number" id="beamBars" value="4" onchange="calc()"></div>
+                <div class="input-group"><label>قطر حديد الميدة (ملم)</label>
+                    <select id="beamBarDiameter" onchange="calc()">
+                        <option value="0.888">12 ملم</option>
+                        <option value="1.21" selected>14 ملم</option>
+                        <option value="1.58">16 ملم</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>تباعد كانات الميدة (م)</label><input type="number" id="midaStirrupSpace" value="0.2" step="0.05" onchange="calc()"></div>
+                <div class="input-group"><label>عدد الأعمدة</label><input type="number" id="columnsCount" value="6" onchange="calc()"></div>
+                <div class="input-group"><label>مقطع العمود (م)</label><input type="number" id="columnSize" value="0.2" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>ارتفاع العمود (م)</label><input type="number" id="columnHeight" value="3" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>عدد أسياخ العمود</label><input type="number" id="columnBars" value="4" onchange="calc()"></div>
+                <div class="input-group"><label>قطر حديد الأعمدة (ملم)</label>
+                    <select id="columnBarDiameter" onchange="calc()">
+                        <option value="1.21">14 ملم</option>
+                        <option value="1.58" selected>16 ملم</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>تباعد كانات العمود (م)</label><input type="number" id="columnStirrupSpace" value="0.15" step="0.05" onchange="calc()"></div>
+                <div class="input-group"><label>عرض الجسر (م)</label><input type="number" id="beamWidthActual" value="0.2" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>ارتفاع الجسر (م)</label><input type="number" id="beamHeight" value="0.4" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>طول الجسور الإجمالي (م)</label><input type="number" id="beamTotalLengthActual" value="50" onchange="calc()"></div>
+                <div class="input-group"><label>عدد أسياخ الجسر</label><input type="number" id="beamBarsActual" value="6" onchange="calc()"></div>
+                <div class="input-group"><label>قطر حديد الجسور (ملم)</label>
+                    <select id="beamBarDiameterActual" onchange="calc()">
+                        <option value="1.21">14 ملم</option>
+                        <option value="1.58" selected>16 ملم</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>تباعد كانات الجسر (م)</label><input type="number" id="beamStirrupSpace" value="0.15" step="0.05" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم الميدة (ريال)</label><input type="number" id="beamForemanLabor" value="30000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال الميدة (ريال)</label><input type="number" id="beamWorkersLabor" value="20000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة معلم العمدان (ريال)</label><input type="number" id="columnForemanLabor" value="30000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال العمدان (ريال)</label><input type="number" id="columnWorkersLabor" value="20000" onchange="calc()"></div>
+                </div>
+            </div>
+            <div class="calc-display" id="calc4"></div>
+            <table class="materials-table" id="mat4"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></table>
+        </div>
+
+        <!-- 5. الجدران -->
+        <div class="section">
+            <div class="section-title">
+                <span>5. بناء الجدران (صافي الكميات)</span>
+                <div>
+                    <span class="section-volume"><span id="vol5">0</span> م²</span>
+                    <span class="section-total"><span id="total5">0</span> ريال</span>
+                </div></div>
+            <div class="input-grid">
+                                <div class="input-group"><label>طول الجدران (م) - تلقائي</label><input type="number" id="totalWallLength" value="0" disabled></div>
+                <div class="input-group"><label>ارتفاع الجدار (م)</label><input type="number" id="wallBuildH" value="3" onchange="calc()"></div>
+                <div class="input-group"><label>سعر البلكة (من الإعدادات)</label><input type="number" id="blockPriceWall" disabled></div>
+                <div class="input-group"><label>بلكة لكل م²</label><input type="number" id="blockPerM2" value="12.5" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>نسبة المونة لكل م²</label><input type="number" id="wallMortarRatio" value="0.03" step="0.01" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم بناء (ريال/م²)</label><input type="number" id="blockForemanLabor" value="15000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال (ريال/م²)</label><input type="number" id="blockWorkersLabor" value="8000" onchange="calc()"></div>
+                </div>
+            </div>
+            <div class="calc-display" id="calc5"></div>
+            <table class="materials-table" id="mat5"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+            <div class="result-box">إجمالي البلك: <span id="finalBlockCount">0</span> حبة | صافي المساحة: <span id="netWallArea">0</span> م²</div>
+        </div>
+
+        <!-- 6. السطح -->
+        <div class="section">
+            <div class="section-title">
+                <span>6. السطح</span>
+                <div>
+                    <span class="section-volume"><span id="vol6">0</span> م³</span>
+                    <span class="section-total"><span id="total6">0</span> ريال</span>
+                </div></div>
+            <div class="input-grid">
+                <div class="input-group"><label>مساحة السطح (م²) - تلقائي</label><input type="number" id="slabArea" value="54" disabled></div>
+                <div class="input-group"><label>سماكة السطح (م)</label><input type="number" id="slabThick" value="0.17" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>تباعد الحديد (م)</label><input type="number" id="steelSpacing" value="0.12" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>قطر حديد السطح (ملم)</label>
+                    <select id="slabBarDiameter" onchange="calc()">
+                        <option value="0.888">12 ملم</option>
+                        <option value="1.21" selected>14 ملم</option>
+                        <option value="1.58">16 ملم</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>سمك الجسر (م)</label><input type="number" id="beamThickness" value="0.2" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>ارتفاع الجسر (م)</label><input type="number" id="beamHeightSlab" value="0.4" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>طول الجسور (م) - تلقائي</label><input type="number" id="beamTotalLengthSlab" value="0" disabled></div>
+                <div class="input-group"><label>حجم خرسانة إضافي (م³)</label><input type="number" id="slabExtraConc" value="0" onchange="calc()"></div>
+            </div>
+            <div class="result-box">
+                حديد السطح: <span id="slabSteelWeightResult">0</span> كجم | 
+                عدد الأسياخ (12م): <span id="slabSteelBarsCount">0</span> سيخ
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم السطح (ريال)</label><input type="number" id="slabForemanLabor" value="30000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال السطح (ريال)</label><input type="number" id="slabWorkersLabor" value="20000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة معلم الصب (ريال)</label><input type="number" id="slabPourForemanLabor" value="30000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال الصب (ريال)</label><input type="number" id="slabPourWorkersLabor" value="20000" onchange="calc()"></div>
+                </div>
+            </div>
+            <div class="calc-display" id="calc6"></div>
+            <table class="materials-table" id="mat6"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- 7. التلييس -->
+        <div class="section">
+            <div class="section-title">
+                <span>7. التلييس</span>
+                <div>
+                    <span class="section-volume"><span id="vol7">0</span> م²</span>
+                    <span class="section-total"><span id="total7">0</span> ريال</span>
+                </div></div>
+            <div class="input-grid">
+               <div class="input-group"><label>مساحة التلييس (م²) - تلقائي</label><input type="number" id="plasterArea" value="0" disabled></div>
+                <div class="input-group"><label>سعر م² تلييس (ريال)</label><input type="number" id="plasterPrice" value="1200" onchange="calc()"></div>
+                <div class="input-group"><label>م² لكل كيس اسمنت</label><input type="number" id="plasterCementRatio" value="7" onchange="calc()"></div>
+                <div class="input-group"><label>سماكة التلييس (م)</label><input type="number" id="plasterThickness" value="0.015" step="0.001" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم تلييس (ريال/م²)</label><input type="number" id="plasterForemanLabor" value="1500" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال (ريال/م²)</label><input type="number" id="plasterWorkersLabor" value="1000" onchange="calc()"></div>
+                </div>
+            </div>
+            <div class="calc-display" id="calc7"></div>
+            <table class="materials-table" id="mat7"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- 8. البلاط -->
+        <div class="section">
+            <div class="section-title">
+                <span>8. البلاط</span>
+                <div>
+                    <span class="section-volume"><span id="vol8">0</span> م²</span>
+                    <span class="section-total"><span id="total8">0</span> ريال</span>
+                </div>
+            </div>
+            <div class="input-grid">
+                <div class="input-group"><label>مساحة البلاط (م²) - تلقائي</label><input type="number" id="tileArea" value="54" disabled></div>
+                <div class="input-group"><label>سعر م² بلاط (ريال)</label><input type="number" id="tilePrice" value="4000" onchange="calc()"></div>
+                <div class="input-group"><label>سماكة المونة (م)</label><input type="number" id="tileMortarThick" value="0.03" step="0.01" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم بلاط (ريال/م²)</label><input type="number" id="tileForemanLabor" value="1500" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال (ريال/م²)</label><input type="number" id="tileWorkersLabor" value="500" onchange="calc()"></div>
+                </div>
+            <div class="calc-display" id="calc8"></div>
+            <table class="materials-table" id="mat8"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- 9. الدهان والكهرباء -->
+        <div class="section">
+            <div class="section-title">
+                <span>9. الدهان + الكهرباء</span>
+                <div>
+                    <span class="section-volume"><span id="vol9">0</span> م²</span>
+                    <span class="section-total"><span id="total9">0</span> ريال</span>
+                </div></div>
+            <div class="input-grid">
+                <div class="input-group"><label>مساحة الدهان (م²) - تلقائي</label><input type="number" id="paintArea" value="0" disabled></div>
+                <div class="input-group"><label>سعر م² دهان (ريال)</label><input type="number" id="paintPrice" value="1312.5" onchange="calc()"></div>
+                <div class="input-group"><label>لتر لكل م²</label><input type="number" id="paintLiterPerM2" value="0.1" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>سعر جالون الدهان (ريال)</label><input type="number" id="paintGallonPrice" value="25000" onchange="calc()"></div>
+                <div class="input-group"><label>سعر لتر التينار (ريال)</label><input type="number" id="thinnerPrice" value="2500" onchange="calc()"></div>
+                <div class="input-group"><label>نسبة التينار %</label><input type="number" id="thinnerRatio" value="10" onchange="calc()"></div>
+            </div>
+            <div class="materials-section">
+                <h4>مواد الكهرباء - تحسب تلقائي</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>مواسير كهرباء (م)</label><input type="number" id="conduitLength" value="500" disabled></div>
+                    <div class="input-group"><label>سعر متر الماسورة</label><input type="number" id="conduitPrice" value="8" onchange="calc()"></div>
+                    <div class="input-group"><label>واير 2.5ملم (م)</label><input type="number" id="wire25Length" value="0" disabled></div>
+                    <div class="input-group"><label>سعر واير 2.5</label><input type="number" id="wire25Price" value="350" step="0.1" onchange="calc()"></div>
+                    <div class="input-group"><label>واير 4ملم (م)</label><input type="number" id="wire4Length" value="0" disabled></div>
+                    <div class="input-group"><label>سعر واير 4</label><input type="number" id="wire4Price" value="400" step="0.1" onchange="calc()"></div>
+                    <div class="input-group"><label>عدد اللمبات</label><input type="number" id="lightsCount" value="0" disabled></div>
+                    <div class="input-group"><label>سعر اللمبة</label><input type="number" id="lightPrice" value="1500" onchange="calc()"></div>
+                    <div class="input-group"><label>عدد المفاتيح</label><input type="number" id="switchesCount" value="0" disabled></div>
+                    <div class="input-group"><label>سعر المفتاح</label><input type="number" id="switchPrice" value="2000" onchange="calc()"></div>
+                    <div class="input-group"><label>عدد الأفياش</label><input type="number" id="socketsCount" value="0" disabled></div>
+                    <div class="input-group"><label>سعر الفيش</label><input type="number" id="socketPrice" value="2000" onchange="calc()"></div>
+                </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم الدهان</label><input type="number" id="paintForemanLabor" value="25000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال الدهان</label><input type="number" id="paintWorkersLabor" value="15000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة كهربائي</label><input type="number" id="elecForemanLabor" value="20000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال كهرباء</label><input type="number" id="elecWorkersLabor" value="8000" onchange="calc()"></div>
+                </div>
+            <div class="calc-display" id="calc9"></div>
+            <table class="materials-table" id="mat9"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- 10. الشبابيك والأبواب -->
+        <div class="section">
+            <div class="section-title">
+                <span>10. شبابيك + أبواب</span>
+                <div>
+                    <span class="section-volume"><span id="vol10">0</span> وحدة</span>
+                    <span class="section-total"><span id="total10">0</span> ريال</span>
+                </div></div>
+            <div class="input-grid">
+                <div class="input-group"><label>عدد الشبابيك</label><input type="number" id="windowCount" value="8" onchange="calc()"></div>
+                <div class="input-group"><label>سعر الشباك (ريال)</label><input type="number" id="windowPrice" value="50000" onchange="calc()"></div>
+                <div class="input-group"><label>عدد الأبواب</label><input type="number" id="doorCount" value="2" onchange="calc()"></div>
+                <div class="input-group"><label>سعر الباب (ريال)</label><input type="number" id="doorPrice" value="71000" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور التركيب</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم تركيب الشبابيك (ريال)</label><input type="number" id="windowForemanLabor" value="20000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال الشبابيك (ريال)</label><input type="number" id="windowWorkersLabor" value="8000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة معلم تركيب الأبواب (ريال)</label><input type="number" id="doorForemanLabor" value="10000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال الأبواب (ريال)</label><input type="number" id="doorWorkersLabor" value="4000" onchange="calc()"></div>
+                </div>
+            <div class="calc-display" id="calc10"></div>
+            <table class="materials-table" id="mat10"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- 11. صبة الميول -->
+        <div class="section">
+            <div class="section-title">
+                <span>11. صبة الميول</span>
+                <div>
+                    <span class="section-volume"><span id="vol11">0</span> م³</span>
+                    <span class="section-total"><span id="total11">0</span> ريال</span>
+                </div></div>
+            <div class="input-grid">
+                <div class="input-group"><label>مساحة السطح (م²) - تلقائي</label><input type="number" id="slopeArea" value="54" disabled></div>
+                <div class="input-group"><label>سماكة الصبة (م)</label><input type="number" id="slopeThickness" value="0.07" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>سعر م² عازل (ريال)</label><input type="number" id="insulationPricePerM2" value="40" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم العزل (ريال)</label><input type="number" id="insulationForemanLabor" value="15000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال العزل (ريال)</label><input type="number" id="insulationWorkersLabor" value="8000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة معلم الصب (ريال)</label><input type="number" id="slopeForemanLabor" value="25000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال الصب (ريال)</label><input type="number" id="slopeWorkersLabor" value="12000" onchange="calc()"></div>
+                </div>
+            <div class="calc-display" id="calc11"></div>
+            <table class="materials-table" id="mat11"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></table>
+        </div>
+
+        <!-- 12. الرصيف -->
+        <div class="section">
+            <div class="section-title">
+                <span>12. الرصيف الخارجي</span>
+                <div>
+                    <span class="section-volume"><span id="vol12">0</span> م²</span>
+                    <span class="section-total"><span id="total12">0</span> ريال</span>
+                </div></div>
+            <div class="input-grid">
+                <div class="input-group"><label>طول الرصيف (م)</label><input type="number" id="sidewalkL" value="0" onchange="calc()"></div>
+                <div class="input-group"><label>عرض الرصيف (م)</label><input type="number" id="sidewalkW" value="0" onchange="calc()"></div>
+                <div class="input-group"><label>سعر م² رصيف (ريال)</label><input type="number" id="sidewalkPrice" value="200" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم الرصيف (ريال)</label><input type="number" id="sidewalkForemanLabor" value="0" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال الرصيف (ريال)</label><input type="number" id="sidewalkWorkersLabor" value="0" onchange="calc()"></div>
+                </div>
+            </div>
+            <div class="calc-display" id="calc12"></div>
+            <table class="materials-table" id="mat12"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <!-- 13. الخزان الأرضي -->
+        <div class="section">
+            <div class="section-title">
+                <span>13. الخزان الأرضي (السمب)</span>
+                <div>
+                    <span class="section-volume"><span id="vol13">0</span> م³</span>
+                    <span class="section-total"><span id="total13">0</span> ريال</span>
+                </div>
+            <div class="input-grid">
+                <div class="input-group"><label>طول الخزان (م)</label><input type="number" id="tankLength" value="0" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>عرض الخزان (م)</label><input type="number" id="tankWidth" value="0" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>عمق الخزان (م)</label><input type="number" id="tankDepth" value="0" step="0.1" onchange="calc()"></div>
+                <div class="input-group"><label>سماكة الجدار (م)</label><input type="number" id="tankWallThick" value="0.2" step="0.01" onchange="calc()"></div>
+                <div class="input-group"><label>سعر م³ حفر (ريال)</label><input type="number" id="tankExcPrice" value="3000" onchange="calc()"></div>
+                <div class="input-group"><label>سعر م² عزل (ريال)</label><input type="number" id="tankInsulationPrice" value="80" onchange="calc()"></div>
+                <div class="input-group"><label>سعر الغطاء (ريال)</label><input type="number" id="tankCoverPrice" value="1500" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم حفر (ريال)</label><input type="number" id="tankExcForemanLabor" value="0" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال حفر (ريال)</label><input type="number" id="tankExcWorkersLabor" value="0" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة معلم بناء (ريال)</label><input type="number" id="tankBuildForemanLabor" value="0" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال بناء (ريال)</label><input type="number" id="tankBuildWorkersLabor" value="0" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة معلم تلييس (ريال)</label><input type="number" id="tankPlasterForemanLabor" value="0" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال تلييس (ريال)</label><input type="number" id="tankPlasterWorkersLabor" value="0" onchange="calc()"></div>
+                </div>
+            <div class="calc-display" id="calc13"></div>
+            <table class="materials-table" id="mat13"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></table>
+        </div>
+        <!-- 14. السباكة -->
+        <div class="section">
+            <div class="section-title">
+                <span>14. أعمال السباكة</span>
+                <div>
+                    <span class="section-volume"><span id="vol14">0</span> نقطة</span>
+                    <span class="section-total"><span id="total14">0</span> ريال</span>
+                </div></div>
+            <div class="input-grid">
+                <div class="input-group"><label>عدد الحمامات</label><input type="number" id="bathroomsCount" value="1" onchange="calc()"></div>
+                <div class="input-group"><label>عدد المطابخ</label><input type="number" id="kitchensCount" value="1" onchange="calc()"></div>
+                <div class="input-group"><label>سعر نقطة السباكة (ريال)</label><input type="number" id="plumbingPointPrice" value="5000" onchange="calc()"></div>
+                <div class="input-group"><label>عدد نقاط المياه - تلقائي</label><input type="number" id="waterPoints" value="0" disabled></div>
+                <div class="input-group"><label>عدد نقاط الصرف - تلقائي</label><input type="number" id="drainPoints" value="0" disabled></div>
+                <div class="input-group"><label>طول مواسير التغذية (م)</label><input type="number" id="waterPipesLength" value="50" onchange="calc()"></div>
+                <div class="input-group"><label>سعر متر مواسير تغذية</label><input type="number" id="waterPipePrice" value="15" onchange="calc()"></div>
+                <div class="input-group"><label>طول مواسير الصرف (م)</label><input type="number" id="drainPipesLength" value="40" onchange="calc()"></div>
+                <div class="input-group"><label>سعر متر مواسير صرف</label><input type="number" id="drainPipePrice" value="25" onchange="calc()"></div>
+            </div>
+            <div class="labor-section">
+                <h4>أجور المعلمين والعمال</h4>
+                <div class="input-grid">
+                    <div class="input-group"><label>أجرة معلم السباكة (ريال)</label><input type="number" id="plumbingForemanLabor" value="50000" onchange="calc()"></div>
+                    <div class="input-group"><label>أجرة عمال السباكة (ريال)</label><input type="number" id="plumbingWorkersLabor" value="20000" onchange="calc()"></div>
+                </div>
+            </div>
+            <div class="calc-display" id="calc14"></div>
+            <table class="materials-table" id="mat14"><thead><tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>التكلفة</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="section">
+            <div class="section-title">ملخص الإجماليات</div>
+            <table class="summary-table">
+                <thead><tr><th>البند</th><th>التكلفة</th></tr></thead>
+                <tbody id="summaryBody"></tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">إجمالي كميات المواد للمشروع كامل</div>
+            <table class="materials-table" id="totalMat">
+                <thead><tr><th>المادة</th><th>الكمية الإجمالية</th><th>الوحدة</th><th>التكلفة الإجمالية</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyB2XN8l-C-xXIVNUV6Lhecy019quSPcTWQEObE3uWHlrxjcR1AdE2BPtWbDiy5uYgJ/exec'; 
+
+        function formatNum(num) { return Math.round(num).toLocaleString('en-US'); }
+        function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+        function updateMatTable(tableId, materials) {
+            let tbody = '';
+            materials.forEach(([name, qty, unit, cost]) => {
+                if(qty > 0.01) {
+                    tbody += `<tr><td>${name}</td><td>${qty.toFixed(2)}</td><td>${unit}</td><td>${formatNum(cost)}</td></tr>`;
+                }
+            });
+            document.querySelector(`#${tableId} tbody`).innerHTML = tbody;
+        }
+
+        function toggleExcavationInputs() {
+            const excPrice = document.getElementById('excPrice');
+            const foreman = document.getElementById('excForemanLabor');
+            const workers = document.getElementById('excWorkersLabor');
+            const days = document.getElementById('excDays');
+
+            if (parseFloat(excPrice.value) > 0) {
+                foreman.value = 0; workers.value = 0; days.value = 0;
+                foreman.disabled = true; workers.disabled = true; days.disabled = true;
+                foreman.style.backgroundColor = "#e9e9"; workers.style.backgroundColor = "#e9e9"; days.style.backgroundColor = "#e9";
+            } else {
+                foreman.disabled = false; workers.disabled = false; days.disabled = false;
+                foreman.style.backgroundColor = "white"; workers.style.backgroundColor = "white"; days.style.backgroundColor = "white";
+            }
+
+            if (parseFloat(foreman.value) > 0 || parseFloat(workers.value) > 0) {
+                excPrice.value = 0;
+                excPrice.disabled = true;
+                excPrice.style.backgroundColor = "#e9e9";
+            } else {
+                excPrice.disabled = false;
+                excPrice.style.backgroundColor = "white";
+            }
+        }
+
+        function calc() {
+            let grandTotal = 0;
+            const summary = [];
+            const totalMaterials = { 'اسمنت': [0, 'كيس', 0], 'نيس': [0, 'م³', 0], 'كري': [0, 'م³', 0], 'ماء': [0, 'م³', 0], 'حديد': [0, 'جرايد', 0], 'خرسانة جاهزة': [0, 'م³', 0], 'حجر': [0, 'م³', 0], 'سلك تربيط': [0, 'كجم', 0] };
+
+            const buildL = getVal('buildLength'), buildW = getVal('buildWidth'), floorH = getVal('floorHeight'), rooms = getVal('roomsCount'), floors = getVal('floorsCount');
+            const cementPrice = getVal('cementPrice'), sandPrice = getVal('sandPrice'), gravelPrice = getVal('gravelPrice'), waterPrice = getVal('waterPrice'), steelPrice = getVal('steelPrice'), concPrice = getVal('concPrice'), blockPrice = getVal('blockPrice');
+            const cementPerM3 = getVal('cementPerM3');
+            const steelWaste = getVal('steelWaste');
+            const cover = 0.05; // الغطاء الخرساني 5سم
+
+            const wallLengthAuto = ((buildL + buildW) * 2) + ((rooms - 1) * buildW);
+            document.getElementById('wallLength').value = wallLengthAuto.toFixed(1);
+            document.getElementById('beamLength').value = wallLengthAuto.toFixed(1);
+            document.getElementById('blockPriceWall').value = blockPrice;
+
+            // 1. الحفر الإنشائي
+            const excD = getVal('excDepth'), trenchD = getVal('trenchDepth'), excW = getVal('excWidth');
+            const footingL = getVal('footingL'), footingW = getVal('footingW'), footingsCount = getVal('footingsCount');
+            const excDiscount = getVal('excDiscount'), excPrice = getVal('excPrice'), excForemanLabor = getVal('excForemanLabor'), excWorkersLabor = getVal('excWorkersLabor'), excDays = getVal('excDays');
+            const soilFactor = getVal('soilType');
+
+            const finalExcPrice = excPrice * soilFactor;
+            const perimeter = (buildL + buildW) * 2;
+            const internalWalls = (rooms - 1) * buildW;
+            const totalExcLength = perimeter + internalWalls;
+
+            const excVol1 = totalExcLength * excW * trenchD;
+            const extraDepthForFootings = Math.max(0, excD - trenchD);
+            const excVol2 = (footingL + 0.3) * (footingW + 0.3) * extraDepthForFootings * footingsCount;
+            const excTotalVol = excVol1 + excVol2;
+            const excFinalVol = excTotalVol * (1 - excDiscount/100);
+
+            const costByVolume = excFinalVol * finalExcPrice;
+            const costByLabor = (excForemanLabor + excWorkersLabor) * excDays;
+            const total1 = costByVolume + costByLabor;
+
+            document.getElementById('calc1').innerHTML = `المحيط = ${perimeter.toFixed(1)} + قواطع ${internalWalls.toFixed(1)} = ${totalExcLength.toFixed(1)}م<br>
+            حجم حفر الكرسي = ${totalExcLength.toFixed(1)} × ${excW} × ${trenchD} = ${excVol1.toFixed(2)} م³<br>
+            حجم حفر القواعد = ${excVol2.toFixed(2)} م³<br>
+            الإجمالي = ${excTotalVol.toFixed(2)} م³ | بعد خصم ${excDiscount}% = ${excFinalVol.toFixed(2)} م³<br>
+            سعر الحجم = ${formatNum(costByVolume)} ريال | أجور العمالة = ${formatNum(costByLabor)} ريال`;
+
+            document.getElementById('excVolume').textContent = excFinalVol.toFixed(2);
+            document.getElementById('total1').textContent = formatNum(total1);
+            document.getElementById('vol1').textContent = excFinalVol.toFixed(2);
+            updateMatTable('mat1', [['حفر وتربة', excFinalVol, 'م³', total1]]);
+            grandTotal += total1; summary.push(['الحفر الإنشائي', total1]);
+
+            // 2. القواعد والرقاب - بالجرايد
+            const concThick = getVal('concThick');
+            const barsPerMeter = getVal('barsPerMeter');
+            const neckHeight = getVal('neckHeight');
+            const neckSize = getVal('neckSize');
+            const neckBars = getVal('neckBars');
+            const neckStirrupSpace = getVal('neckStirrupSpace');
+            const steelForemanLabor = getVal('steelForemanLabor');
+            const steelWorkersLabor = getVal('steelWorkersLabor');
+            const carpForemanLabor = getVal('carpForemanLabor');
+            const carpWorkersLabor = getVal('carpWorkersLabor');
+            const concForemanLabor = getVal('concForemanLabor');
+            const concWorkersLabor = getVal('concWorkersLabor');
+            const barDiameter = parseFloat(document.getElementById('barDiameter').value);
+            const stirrupDiameter = parseFloat(document.getElementById('stirrupDiameter').value);
+
+            const legLength = concThick;
+            const cantBars = 4;
+            const cantLength = 1;
+            const dowelInFooting = 0.6;
+            const dowelAbove = 1.0;
+
+            const N1 = Math.ceil(footingW * barsPerMeter) + 1;
+            const L_bar1 = (footingL - 2*cover) + (legLength * 2);
+            const steel1 = N1 * L_bar1;
+
+            const N2 = Math.ceil(footingL * barsPerMeter) + 1;
+            const L_bar2 = (footingW - 2*cover) + (legLength * 2);
+            const steel2 = N2 * L_bar2;
+
+            const steelCant = cantBars * cantLength;
+            const L_col = neckHeight + dowelInFooting + dowelAbove;
+            const steelCol = neckBars * L_col;
+
+            const stirrupsCount = Math.ceil(neckHeight / neckStirrupSpace) + 1;
+            const stirrupPerimeter = (neckSize - 2*cover) * 4;
+            const hookLength = 0.1;
+            const L_stirrup = stirrupPerimeter + hookLength;
+            const steelStirrup = stirrupsCount * L_stirrup;
+
+            const L_total_oneFooting = steel1 + steel2 + steelCant + steelCol + steelStirrup;
+            const totalSteelLength = L_total_oneFooting * footingsCount;
+            const steelWeight_main = totalSteelLength * barDiameter;
+            const stirrupTotalLength = steelStirrup * footingsCount;
+            const stirrupWeight = stirrupTotalLength * stirrupDiameter;
+            const totalSteelWeight = steelWeight_main + stirrupWeight;
+            const steelWeightWithWaste = totalSteelWeight * (1 + steelWaste/100);
+
+            // تحويل لجرايد 12م
+            const steelBars_main = Math.ceil((steelWeight_main * (1 + steelWaste/100)) / (barDiameter * 12));
+            const steelBars_stirrup = Math.ceil((stirrupWeight * (1 + steelWaste/100)) / (stirrupDiameter * 12));
+            const steelBars_total = steelBars_main + steelBars_stirrup;
+
+            const steelCost = (steelWeightWithWaste / 1000) * steelPrice;
+
+            const bindingWireWeight = Math.ceil(totalSteelWeight / 50);
+            const bindingWirePrice = 8000;
+            const bindingWireCost = bindingWireWeight * bindingWirePrice;
+
+            const footingConcVol = footingL * footingW * concThick * footingsCount;
+            const neckConcVol = neckSize * neckSize * neckHeight * footingsCount;
+            const totalConcVol2 = footingConcVol + neckConcVol;
+
+            let isReadyMix = document.getElementById('readyMixToggle').checked;
+            let cementBags2, sandVol2, gravelVol2, concCost2;
+
+            if (isReadyMix) {
+                cementBags2 = 0; sandVol2 = 0; gravelVol2 = 0;
+                concCost2 = totalConcVol2 * concPrice;
+            } else {
+                cementBags2 = totalConcVol2 * cementPerM3;
+                sandVol2 = totalConcVol2 * 0.4;
+                gravelVol2 = totalConcVol2 * 0.8;
+                concCost2 = 0;
+            }
+
+            const waterVol2 = totalConcVol2 * 0.2;
+            const cementCost2 = cementBags2 * cementPrice;
+            const sandCost2 = sandVol2 * sandPrice;
+            const gravelCost2 = gravelVol2 * gravelPrice;
+            const waterCost2 = waterVol2 * waterPrice / 5;
+
+            const total2 = steelCost + bindingWireCost + steelForemanLabor + steelWorkersLabor +
+                           carpForemanLabor + carpWorkersLabor +
+                           concForemanLabor + concWorkersLabor +
+                           concCost2 + cementCost2 + sandCost2 + gravelCost2 + waterCost2;
+
+            document.getElementById('steelWeightResult').textContent = `${steelBars_total} جرايد (${formatNum(steelWeightWithWaste)} كجم)`;
+            document.getElementById('steelBarsCount').textContent = steelBars_total;
+
+            document.getElementById('calc2').innerHTML = `
+            فرش = ${N1} سيخ × ${L_bar1.toFixed(2)}م = ${steel1.toFixed(1)}م<br>
+            غطاء = ${N2} سيخ × ${L_bar2.toFixed(2)}م = ${steel2.toFixed(1)}م<br>
+            كوابيلي = ${cantBars} × ${cantLength}م = ${steelCant.toFixed(1)}م<br>
+            أشاير = ${neckBars} × ${L_col.toFixed(1)}م = ${steelCol.toFixed(1)}م<br>
+            كانات = ${stirrupsCount} × ${L_stirrup.toFixed(2)}م = ${steelStirrup.toFixed(1)}م<br>
+            إجمالي القاعدة = ${L_total_oneFooting.toFixed(1)}م × ${footingsCount} = ${totalSteelLength.toFixed(1)}م<br>
+            حديد رئيسي = ${steelBars_main} جرايد | كانات = ${steelBars_stirrup} جرايد | الإجمالي = ${steelBars_total} جرايد<br>
+            سلك تربيط = ${bindingWireWeight} كجم × ${formatNum(bindingWirePrice)} = ${formatNum(bindingWireCost)} ريال<br>
+            خرسانة قواعد = ${footingConcVol.toFixed(2)}م³ + رقاب = ${neckConcVol.toFixed(2)}م³ = ${totalConcVol2.toFixed(2)}م³`;
+
+            document.getElementById('total2').textContent = formatNum(total2);
+            document.getElementById('vol2').textContent = totalConcVol2.toFixed(2);
+
+            updateMatTable('mat2', [
+                ['اسمنت', cementBags2, 'كيس', cementCost2],
+                ['نيس', sandVol2, 'م³', sandCost2],
+                ['كري', gravelVol2, 'م³', gravelCost2],
+                ['ماء', waterVol2, 'م³', waterCost2],
+                ['حديد رئيسي', steelBars_main, 'جرايد', (steelWeight_main * (1 + steelWaste/100) / 1000) * steelPrice],
+                ['حديد كانات', steelBars_stirrup, 'جرايد', (stirrupWeight * (1 + steelWaste/100) / 1000) * steelPrice],
+                ['سلك تربيط', bindingWireWeight, 'كجم', bindingWireCost],
+                ['خرسانة جاهزة', isReadyMix? totalConcVol2 : 0, 'م³', concCost2]
+            ]);
+
+            totalMaterials['اسمنت'][0] += cementBags2; totalMaterials['اسمنت'][2] += cementCost2;
+            totalMaterials['نيس'][0] += sandVol2; totalMaterials['نيس'][2] += sandCost2;
+            totalMaterials['كري'][0] += gravelVol2; totalMaterials['كري'][2] += gravelCost2;
+            totalMaterials['ماء'][0] += waterVol2; totalMaterials['ماء'][2] += waterCost2;
+            totalMaterials['حديد'][0] += steelBars_total; totalMaterials['حديد'][2] += steelCost;
+            totalMaterials['سلك تربيط'][0] += bindingWireWeight; totalMaterials['سلك تربيط'][2] += bindingWireCost;
+            if(isReadyMix) {
+                totalMaterials['خرسانة جاهزة'][0] += totalConcVol2;
+                totalMaterials['خرسانة جاهزة'][2] += concCost2;
+            }
+            grandTotal += total2; summary.push(['القواعد + الرقاب', total2]);
+
+            // 3. الكرسي الحجر - نفس السابق
+            const wallHeight = getVal('wallHeight');
+            const wallThick = getVal('wallThick');
+            const stonePrice = getVal('stonePrice');
+            const mortarRatio = getVal('mortarRatio');
+            const cementPerMortar = getVal('cementPerMortar');
+            const wallForemanLabor = getVal('wallForemanLabor');
+            const wallWorkersLabor = getVal('wallWorkersLabor');
+
+            const totalLength = ((buildL + buildW) * 2) + ((rooms - 1) * buildW);
+            document.getElementById('wallLength').value = totalLength.toFixed(1);
+
+            const stoneVolume = wallThick * wallHeight * totalLength;
+            const stoneVolumeWithWaste = stoneVolume * 1.1;
+
+            const mortarVolume = stoneVolume * (mortarRatio / 100);
+            const cementBags = mortarVolume * cementPerMortar;
+            const sandVol = mortarVolume * 1.1;
+            const cementCost = cementBags * cementPrice;
+            const sandCost = sandVol * sandPrice;
+            const stoneCost = stoneVolumeWithWaste * stonePrice;
+
+            const wallLaborCost = stoneVolumeWithWaste * (wallForemanLabor + wallWorkersLabor);
+
+            const total3 = stoneCost + cementCost + sandCost + wallLaborCost;
+
+            document.getElementById('calc3').innerHTML = `
+            طول الكرسي = ${totalLength.toFixed(1)}م<br>
+            حجم الحجر = ${wallThick}×${wallHeight}×${totalLength} = ${stoneVolumeWithWaste.toFixed(2)}م³ × ${formatNum(stonePrice)} = ${formatNum(stoneCost)} ريال<br>
+            مونة = ${mortarVolume.toFixed(2)}م³ → أسمنت = ${cementBags.toFixed(0)} كيس = ${formatNum(cementCost)} ريال<br>
+            نيس = ${sandVol.toFixed(2)}م³ = ${formatNum(sandCost)} ريال<br>
+            أجور = ${stoneVolumeWithWaste.toFixed(2)}م³ × ${wallForemanLabor + wallWorkersLabor} = ${formatNum(wallLaborCost)} ريال`;
+
+            document.getElementById('total3').textContent = formatNum(total3);
+            document.getElementById('vol3').textContent = stoneVolumeWithWaste.toFixed(2);
+            updateMatTable('mat3', [
+                ['حجر', stoneVolumeWithWaste, 'م³', stoneCost],
+                ['اسمنت', cementBags, 'كيس', cementCost],
+                ['نيس', sandVol, 'م³', sandCost]
+            ]);
+            totalMaterials['حجر'][0] += stoneVolumeWithWaste; totalMaterials['حجر'][2] += stoneCost;
+            totalMaterials['اسمنت'][0] += cementBags; totalMaterials['اسمنت'][2] += cementCost;
+            totalMaterials['نيس'][0] += sandVol; totalMaterials['نيس'][2] += sandCost;
+            grandTotal += total3; summary.push(['الكرسي الحجر', total3]);
+
+            // 4. الميدة + الأعمدة + الجسور - بالجرايد
+            const beamWidth = getVal('beamWidth'), beamHeightInput = getVal('beamHeightInput');
+            const beamBars = getVal('beamBars'), beamBarDiameter = parseFloat(document.getElementById('beamBarDiameter').value);
+            const midaStirrupSpace = getVal('midaStirrupSpace');
+            const columnsCount = getVal('columnsCount'), columnSize = getVal('columnSize'), columnHeight = getVal('columnHeight');
+            const columnBars = getVal('columnBars'), columnBarDiameter = parseFloat(document.getElementById('columnBarDiameter').value);
+            const columnStirrupSpace = getVal('columnStirrupSpace');
+            const beamWidthActual = getVal('beamWidthActual'), beamHeight = getVal('beamHeight');
+            const beamTotalLengthActual = getVal('beamTotalLengthActual'), beamBarsActual = getVal('beamBarsActual');
+            const beamBarDiameterActual = parseFloat(document.getElementById('beamBarDiameterActual').value);
+            const beamStirrupSpace = getVal('beamStirrupSpace');
+            const beamForemanLabor = getVal('beamForemanLabor'), beamWorkersLabor = getVal('beamWorkersLabor');
+            const columnForemanLabor = getVal('columnForemanLabor'), columnWorkersLabor = getVal('columnWorkersLabor');
+
+            const midaLength = totalLength;
+            document.getElementById('beamLength').value = midaLength.toFixed(1);
+            const midaConcVol = beamWidth * beamHeightInput * midaLength;
+
+            const midaSteelLength = midaLength * beamBars;
+            const midaStirrupsCount = Math.ceil(midaLength / midaStirrupSpace) + 1;
+            const midaStirrupLength = ((beamWidth - 2*cover) + (beamHeightInput - 2*cover)) * 2 + 0.1;
+            const midaStirrupTotal = midaStirrupsCount * midaStirrupLength;
+            const midaSteelWeight = midaSteelLength * beamBarDiameter + midaStirrupTotal * stirrupDiameter;
+            const midaSteelWeightWaste = midaSteelWeight * (1 + steelWaste/100);
+            const midaSteelBars = Math.ceil(midaSteelWeightWaste / (beamBarDiameter * 12));
+
+            const columnConcVol = columnSize * columnSize * columnHeight * columnsCount;
+            const columnSteelLength = columnBars * columnHeight * columnsCount;
+            const columnStirrupsCountPer = Math.ceil(columnHeight / columnStirrupSpace) + 1;
+            const columnStirrupLength = (columnSize - 2*cover) * 4 + 0.1;
+            const columnStirrupTotal = columnStirrupsCountPer * columnStirrupLength * columnsCount;
+            const columnSteelWeight = columnSteelLength * columnBarDiameter + columnStirrupTotal * stirrupDiameter;
+            const columnSteelWeightWaste = columnSteelWeight * (1 + steelWaste/100);
+            const columnSteelBars = Math.ceil(columnSteelWeightWaste / (columnBarDiameter * 12));
+
+            const beamConcVol = beamWidthActual * beamHeight * beamTotalLengthActual;
+            const beamSteelLength = beamTotalLengthActual * beamBarsActual;
+            const beamStirrupsCount = Math.ceil(beamTotalLengthActual / beamStirrupSpace);
+            const beamStirrupLength = ((beamWidthActual - 2*cover) + (beamHeight - 2*cover)) * 2 + 0.1;
+            const beamStirrupTotal = beamStirrupsCount * beamStirrupLength;
+            const beamSteelWeight = beamSteelLength * beamBarDiameterActual + beamStirrupTotal * stirrupDiameter;
+            const beamSteelWeightWaste = beamSteelWeight * (1 + steelWaste/100);
+            const beamSteelBars = Math.ceil(beamSteelWeightWaste / (beamBarDiameterActual * 12));
+
+            const totalConcVol4 = midaConcVol + columnConcVol + beamConcVol;
+            const totalSteelWeight4 = midaSteelWeightWaste + columnSteelWeightWaste + beamSteelWeightWaste;
+            const totalSteelBars4 = midaSteelBars + columnSteelBars + beamSteelBars;
+            const steelCost4 = (totalSteelWeight4 / 1000) * steelPrice;
+
+            const beamCementBags = totalConcVol4 * cementPerM3;
+            const beamSandVol = totalConcVol4 * 0.4;
+            const beamGravelVol = totalConcVol4 * 0.8;
+            const beamWaterVol = totalConcVol4 * 0.2;
+            const beamCementCost = beamCementBags * cementPrice;
+            const beamSandCost = beamSandVol * sandPrice;
+            const beamGravelCost = beamGravelVol * gravelPrice;
+            const beamWaterCost = beamWaterVol * waterPrice / 5;
+            const beamConcCost = totalConcVol4 * concPrice;
+
+            const total4 = steelCost4 + beamForemanLabor + beamWorkersLabor + columnForemanLabor + columnWorkersLabor + beamConcCost + beamCementCost + beamSandCost + beamGravelCost + beamWaterCost;
+
+            document.getElementById('calc4').innerHTML = `
+            ميدة = ${beamWidth}×${beamHeightInput}×${midaLength} = ${midaConcVol.toFixed(2)}م³ | حديد = ${midaSteelBars} جرايد<br>
+            أعمدة = ${columnSize}×${columnSize}×${columnHeight}×${columnsCount} = ${columnConcVol.toFixed(2)}م³ | حديد = ${columnSteelBars} جرايد<br>
+            جسور = ${beamWidthActual}×${beamHeight}×${beamTotalLengthActual} = ${beamConcVol.toFixed(2)}م³ | حديد = ${beamSteelBars} جرايد<br>
+            إجمالي خرسانة = ${totalConcVol4.toFixed(2)}م³ | حديد = ${totalSteelBars4} جرايد = ${formatNum(steelCost4)}`;
+
+            document.getElementById('total4').textContent = formatNum(total4);
+            document.getElementById('vol4').textContent = totalConcVol4.toFixed(2);
+            updateMatTable('mat4', [
+                ['اسمنت', beamCementBags, 'كيس', beamCementCost],
+                ['نيس', beamSandVol, 'م³', beamSandCost],
+                ['كري', beamGravelVol, 'م³', beamGravelCost],
+                ['ماء', beamWaterVol, 'م³', beamWaterCost],
+                ['حديد ميدة', midaSteelBars, 'جرايد', (midaSteelWeightWaste/1000)*steelPrice],
+                ['حديد أعمدة', columnSteelBars, 'جرايد', (columnSteelWeightWaste/1000)*steelPrice],
+                ['حديد جسور', beamSteelBars, 'جرايد', (beamSteelWeightWaste/1000)*steelPrice]
+            ]);
+            totalMaterials['اسمنت'][0] += beamCementBags; totalMaterials['اسمنت'][2] += beamCementCost;
+            totalMaterials['نيس'][0] += beamSandVol; totalMaterials['نيس'][2] += beamSandCost;
+            totalMaterials['كري'][0] += beamGravelVol; totalMaterials['كري'][2] += beamGravelCost;
+            totalMaterials['ماء'][0] += beamWaterVol; totalMaterials['ماء'][2] += beamWaterCost;
+            totalMaterials['حديد'][0] += totalSteelBars4; totalMaterials['حديد'][2] += steelCost4;
+            totalMaterials['خرسانة جاهزة'][0] += totalConcVol4; totalMaterials['خرسانة جاهزة'][2] += beamConcCost;
+            grandTotal += total4; summary.push(['الميدة + الأعمدة + الجسور', total4]);
+
+            // 5. الجدران
+            const wallBuildH = getVal('wallBuildH'), blockPerM2 = getVal('blockPerM2');
+            const blockForemanLabor = getVal('blockForemanLabor'), blockWorkersLabor = getVal('blockWorkersLabor');
+            const windowCountWall = getVal('windowsCount'), doorCountWall = getVal('doorsCount');
+
+            const totalWallLength = ((buildL + buildW) * 2) + ((rooms - 1) * buildW);
+            document.getElementById('totalWallLength').value = totalWallLength.toFixed(1);
+            const grossWallArea = totalWallLength * wallBuildH * floors;
+            const openingsArea = (windowCountWall * 1.5) + (doorCountWall * 2);
+            const netWallArea = grossWallArea - openingsArea;
+            const totalBlocks = netWallArea * blockPerM2;
+            const blocksCost = totalBlocks * blockPrice;
+            const blockLaborCost = netWallArea * (blockForemanLabor + blockWorkersLabor);
+            const blockCement = totalBlocks / 70;
+            const blockMortarVol = netWallArea * 0.03;
+            const blockSandVol = blockMortarVol * 0.75;
+            const blockWaterVol = blockMortarVol * 0.25;
+            const blockCementCost = blockCement * cementPrice;
+            const blockSandCost = blockSandVol * sandPrice;
+            const blockWaterCost = blockWaterVol * waterPrice / 5;
+            const total5 = blocksCost + blockLaborCost + blockCementCost + blockSandCost + blockWaterCost;
+
+            document.getElementById('calc5').innerHTML = `طول الجدران: ${totalWallLength.toFixed(1)}م | صافي المساحة: ${netWallArea.toFixed(1)}م²<br>عدد البلك = ${totalBlocks.toFixed(0)} × ${blockPrice} = ${formatNum(blocksCost)}<br>مونة = ${blockMortarVol.toFixed(2)}م³ | اسمنت: ${Math.ceil(blockCement)} كيس = ${formatNum(blockCementCost)}<br>نيس = ${blockSandVol.toFixed(2)}م³ = ${formatNum(blockSandCost)} | ماء = ${formatNum(blockWaterCost)}<br>معلم = ${formatNum(blockForemanLabor * netWallArea)} | عمال = ${formatNum(blockWorkersLabor * netWallArea)}`;
+            document.getElementById('total5').textContent = formatNum(total5);
+            document.getElementById('finalBlockCount').textContent = Math.round(totalBlocks);
+            document.getElementById('netWallArea').textContent = netWallArea.toFixed(1);
+            document.getElementById('vol5').textContent = netWallArea.toFixed(2);
+            updateMatTable('mat5', [
+                ['بلك', totalBlocks, 'حبة', blocksCost],
+                ['اسمنت', blockCement, 'كيس', blockCementCost],
+                ['نيس', blockSandVol, 'م³', blockSandCost],
+                ['ماء', blockWaterVol, 'م³', blockWaterCost]
+            ]);
+            totalMaterials['اسمنت'][0] += blockCement; totalMaterials['اسمنت'][2] += blockCementCost;
+            totalMaterials['نيس'][0] += blockSandVol; totalMaterials['نيس'][2] += blockSandCost;
+            totalMaterials['ماء'][0] += blockWaterVol; totalMaterials['ماء'][2] += blockWaterCost;
+            grandTotal += total5; summary.push(['بناء الجدران', total5]);
+
+            // 6. السطح - بالجرايد
+            const slabThick = getVal('slabThick'), steelSpacing = getVal('steelSpacing'), slabBarDiameter = parseFloat(document.getElementById('slabBarDiameter').value);
+            const beamThickness = getVal('beamThickness'), beamHeightSlab = getVal('beamHeightSlab'), beamTotalLengthSlab = getVal('beamTotalLengthSlab');
+            const slabExtraConc = getVal('slabExtraConc'), slabForemanLabor = getVal('slabForemanLabor'), slabWorkersLabor = getVal('slabWorkersLabor');
+            const slabPourForemanLabor = getVal('slabPourForemanLabor'), slabPourWorkersLabor = getVal('slabPourWorkersLabor');
+
+            const slabArea = buildL * buildW;
+            document.getElementById('slabArea').value = slabArea.toFixed(1);
+            const slabVol = slabArea * slabThick;
+
+            const barsInLength = Math.ceil(buildL / steelSpacing) + 1;
+            const barsInWidth = Math.ceil(buildW / steelSpacing) + 1;
+            const totalSlabSteelLength = (barsInLength * buildW) + (barsInWidth * buildL);
+            const slabSteelWeight = totalSlabSteelLength * slabBarDiameter;
+            const slabSteelWeightWithWaste = slabSteelWeight * (1 + steelWaste/100);
+            const slabSteelBars = Math.ceil(slabSteelWeightWithWaste / (slabBarDiameter * 12));
+            const slabSteelCost = (slabSteelWeightWithWaste / 1000) * steelPrice;
+
+            document.getElementById('slabSteelWeightResult').textContent = `${slabSteelBars} جرايد (${formatNum(slabSteelWeightWithWaste)} كجم)`;
+            document.getElementById('slabSteelBarsCount').textContent = slabSteelBars;
+            document.getElementById('beamTotalLengthSlab').value = beamTotalLengthActual.toFixed(1);
+
+            const beamsConcVol = beamTotalLengthSlab * beamThickness * beamHeightSlab;
+            const slabConcTotal = slabVol + beamsConcVol + slabExtraConc;
+            const slabCementBags = slabConcTotal * cementPerM3;
+            const slabSandVol = slabConcTotal * 0.4;
+            const slabGravelVol = slabConcTotal * 0.8;
+            const slabWaterVol = slabConcTotal * 0.2;
+            const slabCementCost = slabCementBags * cementPrice;
+            const slabSandCost = slabSandVol * sandPrice;
+            const slabGravelCost = slabGravelVol * gravelPrice;
+            const slabWaterCost = slabWaterVol * waterPrice / 5;
+            const slabConcCost = slabConcTotal * concPrice;
+
+            const total6 = slabSteelCost + slabForemanLabor + slabWorkersLabor + slabPourForemanLabor + slabPourWorkersLabor + slabConcCost + slabCementCost + slabSandCost + slabGravelCost + slabWaterCost;
+
+            document.getElementById('calc6').innerHTML = `مساحة = ${buildL} × ${buildW} = ${slabArea} م² | حجم السطح = ${slabVol.toFixed(2)}م³ | جسور = ${beamsConcVol.toFixed(2)}م³<br>إجمالي خرسانة = ${slabConcTotal.toFixed(2)} م³ | اسمنت = ${slabCementBags.toFixed(0)} كيس = ${formatNum(slabCementCost)}<br>حديد = ${totalSlabSteelLength.toFixed(0)}م = ${slabSteelBars} جرايد = ${formatNum(slabSteelCost)}<br>نيس = ${slabSandVol.toFixed(2)}م³ = ${formatNum(slabSandCost)} | كري = ${slabGravelVol.toFixed(2)}م³ = ${formatNum(slabGravelCost)}<br>معلم سطح = ${formatNum(slabForemanLabor)} | عمال = ${formatNum(slabWorkersLabor)} | معلم صب = ${formatNum(slabPourForemanLabor)} | عمال = ${formatNum(slabPourWorkersLabor)}`;
+            document.getElementById('total6').textContent = formatNum(total6);
+            document.getElementById('vol6').textContent = slabConcTotal.toFixed(2);
+            updateMatTable('mat6', [
+                ['اسمنت', slabCementBags, 'كيس', slabCementCost],
+                ['نيس', slabSandVol, 'م³', slabSandCost],
+                ['كري', slabGravelVol, 'م³', slabGravelCost],
+                ['ماء', slabWaterVol, 'م³', slabWaterCost],
+                ['حديد', slabSteelBars, 'جرايد', slabSteelCost]
+            ]);
+            totalMaterials['اسمنت'][0] += slabCementBags; totalMaterials['اسمنت'][2] += slabCementCost;
+            totalMaterials['نيس'][0] += slabSandVol; totalMaterials['نيس'][2] += slabSandCost;
+            totalMaterials['كري'][0] += slabGravelVol; totalMaterials['كري'][2] += slabGravelCost;
+            totalMaterials['ماء'][0] += slabWaterVol; totalMaterials['ماء'][2] += slabWaterCost;
+            totalMaterials['حديد'][0] += slabSteelBars; totalMaterials['حديد'][2] += slabSteelCost;
+            totalMaterials['خرسانة جاهزة'][0] += slabConcTotal; totalMaterials['خرسانة جاهزة'][2] += slabConcCost;
+            grandTotal += total6; summary.push(['السطح', total6]);
+
+            // 7. التلييس
+            const plasterPrice = getVal('plasterPrice'), plasterCementRatio = getVal('plasterCementRatio'), plasterThickness = getVal('plasterThickness');
+            const plasterForemanLabor = getVal('plasterForemanLabor'), plasterWorkersLabor = getVal('plasterWorkersLabor');
+
+            const totalWallLengthPlaster = ((buildL + buildW) * 2) + ((rooms - 1) * buildW);
+            const wallsPlasterArea = totalWallLengthPlaster * floorH * floors;
+            const ceilingArea = slabArea * floors;
+            const plasterArea = wallsPlasterArea + ceilingArea;
+            document.getElementById('plasterArea').value = plasterArea.toFixed(1);
+
+            const plasterCost = plasterArea * plasterPrice;
+            const plasterCement = plasterArea / plasterCementRatio;
+            const plasterMortarVol = plasterArea * plasterThickness;
+            const plasterSandVol = plasterMortarVol * 0.75;
+            const plasterWaterVol = plasterMortarVol * 0.25;
+            const plasterCementCost = plasterCement * cementPrice;
+            const plasterSandCost = plasterSandVol * sandPrice;
+            const plasterWaterCost = plasterWaterVol * waterPrice / 5;
+            const plasterLaborCost = plasterArea * (plasterForemanLabor + plasterWorkersLabor);
+            const total7 = plasterCost + plasterCementCost + plasterSandCost + plasterWaterCost + plasterLaborCost;
+
+            document.getElementById('calc7').innerHTML = `مساحة جدران = ${wallsPlasterArea.toFixed(1)} + سطوح = ${ceilingArea.toFixed(1)} = ${plasterArea.toFixed(1)} م²<br>عمالة = ${plasterArea.toFixed(1)} × ${plasterPrice} = ${formatNum(plasterCost)}<br>مونة = ${plasterMortarVol.toFixed(2)}م³ | اسمنت = ${plasterCement.toFixed(0)} كيس = ${formatNum(plasterCementCost)}<br>نيس = ${plasterSandVol.toFixed(2)}م³ = ${formatNum(plasterSandCost)} | ماء = ${formatNum(plasterWaterCost)}<br>معلم = ${formatNum(plasterForemanLabor * plasterArea)} | عمال = ${formatNum(plasterWorkersLabor * plasterArea)}`;
+            document.getElementById('total7').textContent = formatNum(total7);
+            document.getElementById('vol7').textContent = plasterArea.toFixed(2);
+            updateMatTable('mat7', [
+                ['اسمنت', plasterCement, 'كيس', plasterCementCost],
+                ['نيس', plasterSandVol, 'م³', plasterSandCost],
+                ['ماء', plasterWaterVol, 'م³', plasterWaterCost]
+            ]);
+            totalMaterials['اسمنت'][0] += plasterCement; totalMaterials['اسمنت'][2] += plasterCementCost;
+            totalMaterials['نيس'][0] += plasterSandVol; totalMaterials['نيس'][2] += plasterSandCost;
+            totalMaterials['ماء'][0] += plasterWaterVol; totalMaterials['ماء'][2] += plasterWaterCost;
+            grandTotal += total7; summary.push(['التلييس', total7]);
+
+            // 8. البلاط
+            const tilePrice = getVal('tilePrice'), tileMortarThick = getVal('tileMortarThick');
+            const tileForemanLabor = getVal('tileForemanLabor'), tileWorkersLabor = getVal('tileWorkersLabor');
+
+            const tileArea = slabArea * floors;
+            document.getElementById('tileArea').value = tileArea.toFixed(1);
+
+            const tileCost = tileArea * tilePrice;
+            const tileLaborCost = tileArea * (tileForemanLabor + tileWorkersLabor);
+            const tileMortarVol = tileArea * tileMortarThick;
+            const tileCement = tileMortarVol * 5;
+            const tileSandVol = tileMortarVol * 0.75;
+            const tileWaterVol = tileMortarVol * 0.25;
+            const tileCementCost = tileCement * cementPrice;
+            const tileSandCost = tileSandVol * sandPrice;
+            const tileWaterCost = tileWaterVol * waterPrice / 5;
+            const total8 = tileCost + tileLaborCost + tileCementCost + tileSandCost + tileWaterCost;
+
+            document.getElementById('calc8').innerHTML = `بلاط = ${tileArea} × ${tilePrice} = ${formatNum(tileCost)}<br>مونة = ${tileMortarVol.toFixed(2)}م³ | اسمنت = ${tileCement.toFixed(0)} كيس = ${formatNum(tileCementCost)}<br>نيس = ${tileSandVol.toFixed(2)}م³ = ${formatNum(tileSandCost)} | ماء = ${formatNum(tileWaterCost)}<br>معلم = ${formatNum(tileForemanLabor * tileArea)} | عمال = ${formatNum(tileWorkersLabor * tileArea)}`;
+            document.getElementById('total8').textContent = formatNum(total8);
+            document.getElementById('vol8').textContent = tileArea.toFixed(2);
+            updateMatTable('mat8', [
+                ['بلاط', tileArea, 'م²', tileCost],
+                ['اسمنت', tileCement, 'كيس', tileCementCost],
+                ['نيس', tileSandVol, 'م³', tileSandCost],
+                ['ماء', tileWaterVol, 'م³', tileWaterCost]
+            ]);
+            totalMaterials['اسمنت'][0] += tileCement; totalMaterials['اسمنت'][2] += tileCementCost;
+            totalMaterials['نيس'][0] += tileSandVol; totalMaterials['نيس'][2] += tileSandCost;
+            totalMaterials['ماء'][0] += tileWaterVol; totalMaterials['ماء'][2] += tileWaterCost;
+            grandTotal += total8; summary.push(['البلاط', total8]);
+
+            // 9. الدهان والكهرباء
+            const paintPrice = getVal('paintPrice'), paintLiterPerM2 = getVal('paintLiterPerM2'), paintGallonPrice = getVal('paintGallonPrice');
+            const thinnerPrice = getVal('thinnerPrice'), thinnerRatio = getVal('thinnerRatio');
+            const conduitPrice = getVal('conduitPrice'), wire25Price = getVal('wire25Price'), wire4Price = getVal('wire4Price');
+            const lightPrice = getVal('lightPrice'), switchPrice = getVal('switchPrice'), socketPrice = getVal('socketPrice');
+            const paintForemanLabor = getVal('paintForemanLabor'), paintWorkersLabor = getVal('paintWorkersLabor');
+            const elecForemanLabor = getVal('elecForemanLabor'), elecWorkersLabor = getVal('elecWorkersLabor');
+
+            const paintArea = plasterArea * 2;
+            document.getElementById('paintArea').value = paintArea.toFixed(1);
+            const paintLiters = paintArea * paintLiterPerM2;
+            const paintGallons = paintLiters / 3.785;
+            const thinnerLiters = paintLiters * thinnerRatio / 100;
+            const paintCost = paintArea * paintPrice;
+            const paintMaterialCost = paintGallons * paintGallonPrice;
+            const thinnerCost = thinnerLiters * thinnerPrice;
+
+            const conduitLength = (totalWallLength + (rooms * 15)) * floors;
+            const wire25Length = conduitLength * 3;
+            const wire4Length = rooms * 20 * floors;
+            const lightsCount = (rooms * 2 + 4) * floors;
+            const switchesCount = (rooms * 2 + 2) * floors;
+            const socketsCount = (rooms * 4 + 6) * floors;
+            document.getElementById('conduitLength').value = conduitLength.toFixed(0);
+            document.getElementById('wire25Length').value = wire25Length.toFixed(0);
+            document.getElementById('wire4Length').value = wire4Length.toFixed(0);
+            document.getElementById('lightsCount').value = lightsCount;
+            document.getElementById('switchesCount').value = switchesCount;
+            document.getElementById('socketsCount').value = socketsCount;
+
+            const conduitCost = conduitLength * conduitPrice;
+            const wire25Cost = wire25Length * wire25Price;
+            const wire4Cost = wire4Length * wire4Price;
+            const lightsCost = lightsCount * lightPrice;
+            const switchesCost = switchesCount * switchPrice;
+            const socketsCost = socketsCount * socketPrice;
+            const elecMaterialCost = conduitCost + wire25Cost + wire4Cost + lightsCost + switchesCost + socketsCost;
+
+            const total9 = paintCost + paintMaterialCost + thinnerCost + paintForemanLabor + paintWorkersLabor + elecMaterialCost + elecForemanLabor + elecWorkersLabor;
+
+            document.getElementById('calc9').innerHTML = `دهان = ${paintArea.toFixed(0)}م² × ${paintPrice} = ${formatNum(paintCost)} | ${paintGallons.toFixed(0)} جالون = ${formatNum(paintMaterialCost)}<br>تينار = ${thinnerLiters.toFixed(1)}لتر = ${formatNum(thinnerCost)} | معلم = ${formatNum(paintForemanLabor)} | عمال = ${formatNum(paintWorkersLabor)}<br>مواسير = ${conduitLength}م = ${formatNum(conduitCost)} | واير2.5 = ${wire25Length}م = ${formatNum(wire25Cost)}<br>واير4 = ${wire4Length}م = ${formatNum(wire4Cost)} | لمبات ${lightsCount} = ${formatNum(lightsCost)}<br>مفاتيح ${switchesCount} = ${formatNum(switchesCost)} | أفياش ${socketsCount} = ${formatNum(socketsCost)}<br>كهربائي = ${formatNum(elecForemanLabor)} | عمال = ${formatNum(elecWorkersLabor)}`;
+            document.getElementById('total9').textContent = formatNum(total9);
+            document.getElementById('vol9').textContent = paintArea.toFixed(2);
+            updateMatTable('mat9', [
+                ['دهان', paintGallons, 'جالون', paintMaterialCost],
+                ['تينار', thinnerLiters, 'لتر', thinnerCost],
+                ['مواسير', conduitLength, 'م', conduitCost],
+                ['واير 2.5', wire25Length, 'م', wire25Cost],
+                ['واير 4', wire4Length, 'م', wire4Cost],
+                ['لمبات', lightsCount, 'حبة', lightsCost],
+                ['مفاتيح', switchesCount, 'حبة', switchesCost],
+                ['أفياش', socketsCount, 'حبة', socketsCost]
+            ]);
+            grandTotal += total9; summary.push(['الدهان + الكهرباء', total9]);
+
+            // 10. الشبابيك والأبواب
+            const windowCount = getVal('windowCount'), windowPrice = getVal('windowPrice'), doorCount = getVal('doorCount');
+            const doorPrice = getVal('doorPrice'), windowForemanLabor = getVal('windowForemanLabor'), windowWorkersLabor = getVal('windowWorkersLabor');
+            const doorForemanLabor = getVal('doorForemanLabor'), doorWorkersLabor = getVal('doorWorkersLabor');
+
+            const total10 = windowCount * windowPrice + doorCount * doorPrice + windowForemanLabor + windowWorkersLabor + doorForemanLabor + doorWorkersLabor;
+
+            document.getElementById('calc10').innerHTML = `شبابيك = ${windowCount} × ${windowPrice} = ${formatNum(windowCount * windowPrice)} | معلم = ${formatNum(windowForemanLabor)} | عمال = ${formatNum(windowWorkersLabor)}<br>أبواب = ${doorCount} × ${doorPrice} = ${formatNum(doorCount * doorPrice)} | معلم = ${formatNum(doorForemanLabor)} | عمال = ${formatNum(doorWorkersLabor)}`;
+            document.getElementById('total10').textContent = formatNum(total10);
+            document.getElementById('vol10').textContent = windowCount + doorCount;
+            updateMatTable('mat10', [
+                ['شبابيك', windowCount, 'حبة', windowCount * windowPrice],
+                ['أبواب', doorCount, 'حبة', doorCount * doorPrice]
+            ]);
+            grandTotal += total10; summary.push(['شبابيك + أبواب', total10]);
+
+            // 11. صبة الميول
+            const slopeThickness = getVal('slopeThickness'), insulationPricePerM2 = getVal('insulationPricePerM2');
+            const insulationForemanLabor = getVal('insulationForemanLabor'), insulationWorkersLabor = getVal('insulationWorkersLabor');
+            const slopeForemanLabor = getVal('slopeForemanLabor'), slopeWorkersLabor = getVal('slopeWorkersLabor');
+
+            const slopeArea = slabArea;
+            document.getElementById('slopeArea').value = slopeArea.toFixed(1);
+            const slopeConcVol = slopeArea * slopeThickness;
+            const slopeInsulationCost = slopeArea * insulationPricePerM2;
+            const slopeCementBags = slopeConcVol * cementPerM3;
+            const slopeSandVol = slopeConcVol * 0.4;
+            const slopeGravelVol = slopeConcVol * 0.8;
+            const slopeWaterVol = slopeConcVol * 0.2;
+            const slopeCementCost = slopeCementBags * cementPrice;
+            const slopeSandCost = slopeSandVol * sandPrice;
+            const slopeGravelCost = slopeGravelVol * gravelPrice;
+            const slopeWaterCost = slopeWaterVol * waterPrice / 5;
+            const slopeConcCost = slopeConcVol * concPrice;
+            const total11 = slopeInsulationCost + insulationForemanLabor + insulationWorkersLabor + slopeConcCost + slopeCementCost + slopeSandCost + slopeGravelCost + slopeWaterCost + slopeForemanLabor + slopeWorkersLabor;
+
+            document.getElementById('calc11').innerHTML = `المساحة = ${slopeArea} م² | عازل = ${slopeArea} × ${insulationPricePerM2} = ${formatNum(slopeInsulationCost)}<br>خرسانة = ${slopeConcVol.toFixed(2)}م³ | اسمنت = ${slopeCementBags.toFixed(0)} كيس = ${formatNum(slopeCementCost)}<br>نيس = ${slopeSandVol.toFixed(2)}م³ = ${formatNum(slopeSandCost)} | كري = ${slopeGravelVol.toFixed(2)}م³ = ${formatNum(slopeGravelCost)}<br>معلم عزل = ${formatNum(insulationForemanLabor)} | عمال = ${formatNum(insulationWorkersLabor)} | معلم صب = ${formatNum(slopeForemanLabor)} | عمال = ${formatNum(slopeWorkersLabor)}`;
+            document.getElementById('total11').textContent = formatNum(total11);
+            document.getElementById('vol11').textContent = slopeConcVol.toFixed(2);
+            updateMatTable('mat11', [
+                ['عازل', slopeArea, 'م²', slopeInsulationCost],
+                ['اسمنت', slopeCementBags, 'كيس', slopeCementCost],
+                ['نيس', slopeSandVol, 'م³', slopeSandCost],
+                ['كري', slopeGravelVol, 'م³', slopeGravelCost],
+                ['ماء', slopeWaterVol, 'م³', slopeWaterCost]
+            ]);
+            totalMaterials['اسمنت'][0] += slopeCementBags; totalMaterials['اسمنت'][2] += slopeCementCost;
+            totalMaterials['نيس'][0] += slopeSandVol; totalMaterials['نيس'][2] += slopeSandCost;
+            totalMaterials['كري'][0] += slopeGravelVol; totalMaterials['كري'][2] += slopeGravelCost;
+            totalMaterials['ماء'][0] += slopeWaterVol; totalMaterials['ماء'][2] += slopeWaterCost;
+            totalMaterials['خرسانة جاهزة'][0] += slopeConcVol; totalMaterials['خرسانة جاهزة'][2] += slopeConcCost;
+            grandTotal += total11; summary.push(['صبة الميول', total11]);
+
+            // 12. الرصيف
+            const sidewalkL = getVal('sidewalkL'), sidewalkW = getVal('sidewalkW'), sidewalkPrice = getVal('sidewalkPrice');
+            const sidewalkForemanLabor = getVal('sidewalkForemanLabor'), sidewalkWorkersLabor = getVal('sidewalkWorkersLabor');
+            const sidewalkArea = sidewalkL * sidewalkW;
+            const total12 = sidewalkArea * sidewalkPrice + sidewalkForemanLabor + sidewalkWorkersLabor;
+
+            document.getElementById('calc12').innerHTML = `مساحة = ${sidewalkL} × ${sidewalkW} = ${sidewalkArea} م² × ${sidewalkPrice} = ${formatNum(sidewalkArea * sidewalkPrice)}<br>معلم = ${formatNum(sidewalkForemanLabor)} | عمال = ${formatNum(sidewalkWorkersLabor)}`;
+            document.getElementById('total12').textContent = formatNum(total12);
+            document.getElementById('vol12').textContent = sidewalkArea.toFixed(2);
+            updateMatTable('mat12', [['رصيف', sidewalkArea, 'م²', sidewalkArea * sidewalkPrice]]);
+            grandTotal += total12; if(total12 > 0) summary.push(['الرصيف الخارجي', total12]);
+
+            // 13. الخزان الأرضي
+            const tankLength = getVal('tankLength'), tankWidth = getVal('tankWidth'), tankDepth = getVal('tankDepth'), tankWallThick = getVal('tankWallThick');
+            const tankExcForemanLabor = getVal('tankExcForemanLabor'), tankExcWorkersLabor = getVal('tankExcWorkersLabor');
+            const tankBuildForemanLabor = getVal('tankBuildForemanLabor'), tankBuildWorkersLabor = getVal('tankBuildWorkersLabor');
+            const tankPlasterForemanLabor = getVal('tankPlasterForemanLabor'), tankPlasterWorkersLabor = getVal('tankPlasterWorkersLabor');
+            const tankInsulationPrice = getVal('tankInsulationPrice'), tankCoverPrice = getVal('tankCoverPrice');
+            const tankExcPrice = getVal('tankExcPrice');
+
+            const tankExcVol = (tankLength + 1) * (tankWidth + 1) * (tankDepth + 0.5);
+            const tankWallsArea = ((tankLength + tankWidth) * 2 * tankDepth) + (tankLength * tankWidth);
+            const tankConcVol = tankWallsArea * tankWallThick;
+            const tankCementBags = tankConcVol * 9;
+            const tankSandVol = tankConcVol * 0.4;
+            const tankGravelVol = tankConcVol * 0.8;
+            const tankWaterVol = tankConcVol * 0.2;
+            const tankExcCost = tankExcVol * tankExcPrice;
+            const tankConcCost = tankConcVol * concPrice;
+            const tankCementCost = tankCementBags * cementPrice;
+            const tankSandCost = tankSandVol * sandPrice;
+            const tankGravelCost = tankGravelVol * gravelPrice;
+            const tankWaterCost = tankWaterVol * waterPrice / 5;
+            const tankInsulationCost = tankWallsArea * tankInsulationPrice;
+            const tankLaborCost = tankExcForemanLabor + tankExcWorkersLabor + tankBuildForemanLabor + tankBuildWorkersLabor + tankPlasterForemanLabor + tankPlasterWorkersLabor;
+            const tankTotal = tankExcCost + tankConcCost + tankCementCost + tankSandCost + tankGravelCost + tankWaterCost + tankInsulationCost + tankCoverPrice + tankLaborCost;
+
+            document.getElementById('calc13').innerHTML = `حفر = ${tankExcVol.toFixed(1)}م³ × ${tankExcPrice} = ${formatNum(tankExcCost)} | خرسانة = ${tankConcVol.toFixed(2)}م³ = ${formatNum(tankConcCost)}<br>اسمنت = ${tankCementBags.toFixed(0)} كيس = ${formatNum(tankCementCost)} | نيس = ${tankSandVol.toFixed(2)}م³ = ${formatNum(tankSandCost)}<br>كري = ${tankGravelVol.toFixed(2)}م³ = ${formatNum(tankGravelCost)} | عزل = ${tankWallsArea.toFixed(1)}م² × ${tankInsulationPrice} = ${formatNum(tankInsulationCost)}<br>غطاء = ${formatNum(tankCoverPrice)} | أجور معلمين = ${formatNum(tankExcForemanLabor + tankBuildForemanLabor + tankPlasterForemanLabor)} | عمال = ${formatNum(tankExcWorkersLabor + tankBuildWorkersLabor + tankPlasterWorkersLabor)}`;
+            document.getElementById('total13').textContent = formatNum(tankTotal);
+            document.getElementById('vol13').textContent = tankConcVol.toFixed(2);
+            updateMatTable('mat13', [
+                ['حفر', tankExcVol, 'م³', tankExcCost],
+                ['خرسانة', tankConcVol, 'م³', tankConcCost],
+                ['اسمنت', tankCementBags, 'كيس', tankCementCost],
+                ['نيس', tankSandVol, 'م³', tankSandCost],
+                ['كري', tankGravelVol, 'م³', tankGravelCost],
+                ['عزل', tankWallsArea, 'م²', tankInsulationCost],
+                ['غطاء', 1, 'حبة', tankCoverPrice]
+            ]);
+            totalMaterials['اسمنت'][0] += tankCementBags; totalMaterials['اسمنت'][2] += tankCementCost;
+            totalMaterials['نيس'][0] += tankSandVol; totalMaterials['نيس'][2] += tankSandCost;
+            totalMaterials['كري'][0] += tankGravelVol; totalMaterials['كري'][2] += tankGravelCost;
+            totalMaterials['ماء'][0] += tankWaterVol; totalMaterials['ماء'][2] += tankWaterCost;
+            totalMaterials['خرسانة جاهزة'][0] += tankConcVol; totalMaterials['خرسانة جاهزة'][2] += tankConcCost;
+            grandTotal += tankTotal; if(tankTotal > 0) summary.push(['الخزان الأرضي', tankTotal]);
+
+            // 14. السباكة
+            const bathroomsCount = getVal('bathroomsCount'), kitchensCount = getVal('kitchensCount');
+            const plumbingPointPrice = getVal('plumbingPointPrice');
+            const waterPipesLength = getVal('waterPipesLength'), waterPipePrice = getVal('waterPipePrice');
+            const drainPipesLength = getVal('drainPipesLength'), drainPipePrice = getVal('drainPipePrice');
+            const plumbingForemanLabor = getVal('plumbingForemanLabor'), plumbingWorkersLabor = getVal('plumbingWorkersLabor');
+
+            const waterPoints = (bathroomsCount * 6) + (kitchensCount * 4) + 2;
+            const drainPoints = (bathroomsCount * 3) + (kitchensCount * 2) + 1;
+            const totalPoints = waterPoints + drainPoints;
+            document.getElementById('waterPoints').value = waterPoints;
+            document.getElementById('drainPoints').value = drainPoints;
+
+            const pointsCost = totalPoints * plumbingPointPrice;
+            const waterPipesCost = waterPipesLength * waterPipePrice;
+            const drainPipesCost = drainPipesLength * drainPipePrice;
+            const plumbingLaborCost = plumbingForemanLabor + plumbingWorkersLabor;
+            const total14 = pointsCost + waterPipesCost + drainPipesCost + plumbingLaborCost;
+
+            document.getElementById('calc14').innerHTML = `نقاط المياه = ${waterPoints} | نقاط الصرف = ${drainPoints} | الإجمالي = ${totalPoints} نقطة × ${plumbingPointPrice} = ${formatNum(pointsCost)}<br>مواسير تغذية = ${waterPipesLength}م × ${waterPipePrice} = ${formatNum(waterPipesCost)} | مواسير صرف = ${drainPipesLength}م × ${drainPipePrice} = ${formatNum(drainPipesCost)}<br>معلم = ${formatNum(plumbingForemanLabor)} | عمال = ${formatNum(plumbingWorkersLabor)}`;
+            document.getElementById('total14').textContent = formatNum(total14);
+            document.getElementById('vol14').textContent = totalPoints;
+            updateMatTable('mat14', [
+                ['نقاط سباكة', totalPoints, 'نقطة', pointsCost],
+                ['مواسير تغذية', waterPipesLength, 'م', waterPipesCost],
+                ['مواسير صرف', drainPipesLength, 'م', drainPipesCost]
+            ]);
+            grandTotal += total14; if(total14 > 0) summary.push(['أعمال السباكة', total14]);
+
+            // تحديث الإجمالي العلوي والجدول
+            document.getElementById('grandTotal').textContent = formatNum(grandTotal);
+
+            let tbody = '';
+            summary.forEach(([name, cost]) => {
+                tbody += `<tr><td>${name}</td><td>${formatNum(cost)} ريال</td></tr>`;
+            });
+            tbody += `<tr style="background: var(--primary); color: white; font-weight: 700;"><td>الإجمالي الكلي</td><td>${formatNum(grandTotal)} ريال</td></tr>`;
+            document.getElementById('summaryBody').innerHTML = tbody;
+
+            // جدول إجمالي المواد
+            let matTbody = '';
+            Object.entries(totalMaterials).forEach(([name, [qty, unit, cost]]) => {
+                if(qty > 0.01) {
+                    matTbody += `<tr><td>${name}</td><td>${qty.toFixed(2)}</td><td>${unit}</td><td>${formatNum(cost)}</td></tr>`;
+                }
+            });
+            document.querySelector('#totalMat tbody').innerHTML = matTbody;
+
+            saveData();
+        }
+
+        function saveData() {
+            const inputs = document.querySelectorAll('input, select');
+            const data = {};
+            inputs.forEach(inp => data[inp.id] = inp.value);
+            localStorage.setItem('buildingCalc', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const data = localStorage.getItem('buildingCalc');
+            if(data) {
+                const obj = JSON.parse(data);
+                Object.keys(obj).forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.value = obj[id];
+                });
+                toggleExcavationInputs();
+                calc();
+                alert('تم استعادة البيانات');
+            } else {
+                alert('لا توجد بيانات محفوظة');
+            }
+        }
+
+        function resetAll() {
+            if(confirm('هل تريد إعادة تعيين كل القيم؟')) {
+                document.querySelectorAll('input').forEach(inp => {
+                    if(!inp.disabled) inp.value = inp.defaultValue;
+                });
+                document.querySelectorAll('select').forEach(sel => {
+                    sel.selectedIndex = 0;
+                });
+                toggleExcavationInputs();
+                calc();
+            }
+        }
+
+        function sendToGoogleSheets(event) {
+            const inputs = document.querySelectorAll('input, select');
+            const data = {};
+
+            inputs.forEach(inp => {
+                if (inp.id) {
+                    data[inp.id] = inp.value;
+                }
+            });
+
+            data['grandTotal'] = document.getElementById('grandTotal').textContent;
+            data['timestamp'] = new Date().toLocaleString('ar-YE');
+
+            const saveBtn = event? event.target : document.querySelector('button[onclick*="sendToGoogleSheets"]');
+            const originalText = saveBtn.innerText;
+            saveBtn.innerText = "جاري الإرسال...";
+            saveBtn.disabled = true;
+
+            fetch(scriptURL, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            })
+      .then(response => {
+                alert('تم حفظ البيانات في جوجل شيت بنجاح!');
+                saveBtn.innerText = originalText;
+                saveBtn.disabled = false;
+            })
+      .catch(error => {
+                console.error('Error!', error.message);
+                alert('حدث خطأ أثناء الإرسال، تأكد من إعدادات Apps Script');
+                saveBtn.innerText = originalText;
+                saveBtn.disabled = false;
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('excPrice').addEventListener('input', toggleExcavationInputs);
+            document.getElementById('excForemanLabor').addEventListener('input', toggleExcavationInputs);
+            document.getElementById('excWorkersLabor').addEventListener('input', toggleExcavationInputs);
+            toggleExcavationInputs();
+            calc();
+        });
+    </script>
+</body>
+</html>
